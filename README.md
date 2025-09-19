@@ -1,5 +1,5 @@
 # NewsChat - AI-Powered News Assistant
-
+![App Logo](public/Project.jpg)
 A modern web application that combines real-time news with AI-powered chat assistance.
 
 ## Features

@@ -54,20 +54,23 @@ async function fetchNewsData(query: string, category = "general", sortBy = "publ
     // Build search query
     if (location || from || to) {
       searchQuery = query.replace(/\b(news|latest|headlines|give me|show me|from|of|yesterday|today)\b/gi, "").trim()
+    } else {
+      searchQuery = query
     }
 
+    // Build NewsAPI query params
     const params = new URLSearchParams({
-      category,
       sortBy,
+      language: "en",
+      apiKey,
     })
 
     if (searchQuery) params.append("q", searchQuery)
-    if (location) params.append("location", location)
     if (from) params.append("from", from)
     if (to) params.append("to", to)
 
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/news?${params}`
-    console.log("[v0] Fetching news with enhanced params:", url)
+    const url = `https://newsapi.org/v2/everything?${params.toString()}`
+    console.log("[Chat] Fetching news with enhanced params:", url)
 
     const response = await fetch(url)
 
@@ -83,7 +86,7 @@ async function fetchNewsData(query: string, category = "general", sortBy = "publ
 
     return { articles: data.articles }
   } catch (error) {
-    console.error("[v0] Enhanced news fetch error:", error)
+    console.error("[Chat] Enhanced news fetch error:", error)
     return { error: "Failed to fetch news" }
   }
 }
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[v0] Chat request received:", message)
+    console.log("[Chat] Chat request received:", message)
 
     process.env.GOOGLE_GENERATIVE_AI_API_KEY = geminiApiKey
 
@@ -115,7 +118,7 @@ export async function POST(request: NextRequest) {
         message,
       )
 
-    console.log("[v0] Is news query:", isNewsQuery)
+    console.log("[Chat] Is news query:", isNewsQuery)
 
     let prompt = ""
 
@@ -126,33 +129,37 @@ export async function POST(request: NextRequest) {
         (cat) => message.toLowerCase().includes(cat) || message.toLowerCase().includes(cat.slice(0, -1)),
       )
 
-      console.log("[v0] Found category:", foundCategory)
+      console.log("[Chat] Found category:", foundCategory)
 
       try {
-        console.log("[v0] Fetching enhanced news data")
+        console.log("[Chat] Fetching enhanced news data")
         const newsData = await fetchNewsData(message, foundCategory || "general", "publishedAt")
 
-        console.log("[v0] News data:", { hasArticles: !!newsData.articles, count: newsData.articles?.length })
+        console.log("[Chat] News data:", { hasArticles: !!newsData.articles, count: newsData.articles?.length })
 
         if (newsData.articles && newsData.articles.length > 0) {
           const topArticles = newsData.articles.slice(0, 4) // Show more articles
           const newsContext = topArticles
-            .map((article: any) => `• ${article.title}\n  ${article.description}\n  Published: ${article.publishedAt}`)
+         .map(
+         (article: any) =>
+         `**${article.title}**\n${article.description}\n**Published:** ${article.publishedAt}`
+          )
             .join("\n\n")
+
 
           prompt = `Based on these recent news articles, answer the user's question: "${message}"\n\nNews Articles:\n${newsContext}\n\nProvide a comprehensive response with key details from the articles.`
         } else {
           prompt = `The user asked: "${message}". Explain that you couldn't find recent news articles matching their specific request. Suggest they try a different date range or location. Be helpful and brief.`
         }
       } catch (error) {
-        console.error("[v0] Error fetching news for chat:", error)
+        console.error("[Chat] Error fetching news for chat:", error)
         prompt = `The user asked: "${message}". Explain there's a temporary issue accessing news data. Be brief and helpful.`
       }
     } else {
       prompt = `Answer this question helpfully and briefly: "${message}"`
     }
 
-    console.log("[v0] Generating AI response")
+    console.log("[Chat] Generating AI response")
 
     const result = await generateText({
       model: google("gemini-1.5-flash"),
@@ -161,14 +168,14 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
     })
 
-    console.log("[v0] AI response generated successfully")
+    console.log("[Chat] AI response generated successfully")
 
     return new Response(JSON.stringify({ response: result.text }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
   } catch (error) {
-    console.error("[v0] Chat API error:", error)
+    console.error("[Chat] Chat API error:", error)
     return new Response(JSON.stringify({ error: "Failed to process chat message" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
