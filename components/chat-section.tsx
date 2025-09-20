@@ -16,7 +16,6 @@ interface Message {
 
 const suggestedQueries = [
   "Tell me the latest tech news",
-  "What's happening in business today?",
   "Show me sports headlines",
   "Any breaking news?",
   "Latest science discoveries",
