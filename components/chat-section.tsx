@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Send, Bot, User, Loader2, AlertCircle } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   id: string
@@ -184,15 +185,16 @@ export function ChatSection() {
                     message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  <p className="text-lg whitespace-pre-wrap">
-                    {message.content}
-                    {message.sender === "bot" && !message.content && isLoading && (
+                    <div className="text-lg whitespace-pre-wrap">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      {message.sender === "bot" && !message.content && isLoading && (
                       <span className="inline-flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span className="text-lg opacity-70">Typing...</span>
-                      </span>
-                    )}
-                  </p>
+                         <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="text-lg opacity-70">Typing...</span>
+                            </span>
+                             )}
+                            </div>
+
                   <p className={`text-lg mt-1 opacity-70`}>{formatTime(message.timestamp)}</p>
                 </div>
 
